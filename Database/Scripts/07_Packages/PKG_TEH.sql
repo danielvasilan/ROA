@@ -17,7 +17,11 @@ FUNCTION f_str_item_variable    (   p_org_code      VARCHAR2,
                                     p_item_code     VARCHAR2)
                                     RETURN          VARCHAR2;
 
-
+FUNCTION f_sql_all_item_variable(   p_line_id       NUMBER,
+                                    p_org_code      VARCHAR2, 
+                                    p_var_code      VARCHAR2)         
+                                    RETURN          typ_frm    pipelined;
+                                    
 END;
  
 
