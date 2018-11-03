@@ -148,7 +148,7 @@ FUNCTION f_sql_all_item_variable(   p_line_id       NUMBER,
 IS                                    
     CURSOR C_VAR
           IS
-          SELECT iv.idriga, iv.dcn, iv.org_code, iv.item_code, i.description item_description, iv.var_value
+          SELECT iv.idriga, iv.dcn, iv.org_code, iv.item_code, i.description item_description, iv.var_code, iv.var_value
           FROM ITEM_VARIABLE iv
           INNER JOIN ITEM i ON i.org_code = iv.org_code AND i.item_code = iv.item_code
           WHERE iv.org_code = p_org_code
@@ -157,7 +157,7 @@ IS
           
           UNION ALL
           
-          SELECT iv.idriga, iv.dcn, iv.org_code, iv.item_code, i.description item_description, iv.var_value
+          SELECT iv.idriga, iv.dcn, iv.org_code, iv.item_code, i.description item_description, iv.var_code, iv.var_value
           FROM ITEM_VARIABLE iv
           INNER JOIN ITEM i ON i.org_code = iv.org_code AND i.item_code = iv.item_code
           WHERE iv.idriga = p_line_id
@@ -174,7 +174,8 @@ BEGIN
         v_row.txt01     :=  x.org_code;
         v_row.txt02     :=  x.item_code;
         v_row.txt03     :=  x.item_description;
-        v_row.txt04     :=  x.var_value;
+        v_row.txt04     :=  x.var_code;
+        v_row.txt05     :=  x.var_value;
     
         pipe ROW(v_row);
     END LOOP;
