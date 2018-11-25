@@ -1118,11 +1118,11 @@ IS
                     WHERE       i.org_code      =   p_org_code
                         AND     i.mat_type      =   'CALAPOD'
                         AND     p_var_code      =   'CALAPOD'
-						AND     (
-								description LIKE '%'||p_search||'%'
-								OR
-								item_code LIKE '%'||p_search||'%'
-								)
+                        AND     (
+                            description LIKE '%'||p_search||'%'
+                            OR
+                            item_code LIKE '%'||p_search||'%'
+                            )
                     --
                     UNION ALL
                     --
@@ -1133,6 +1133,7 @@ IS
                     FROM        MULTI_TABLE
                     WHERE       table_name      =   'TEHVAR_'||p_var_code
                         AND     p_var_code      <>  'CALAPOD'
+                        AND     description     LIKE '%'||p_search||'%'
                     ORDER BY    seq_no
                     );
 

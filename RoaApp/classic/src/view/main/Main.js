@@ -16,7 +16,9 @@ Ext.define('RoaApp.view.main.Main', {
         'RoaApp.view.main.MainController',
         'RoaApp.view.main.MainModel',
         'RoaApp.view.main.List',
-		'RoaApp.view.main.usersgrid'
+		'RoaApp.view.main.usersgrid',
+		'RoaApp.view.main.filterForm',
+		'RoaApp.view.main.basePanel'
     ],
 
     controller: 'main',
@@ -90,16 +92,16 @@ Ext.define('RoaApp.view.main.Main', {
             xtype: 'usersgrid'
         }]
     }, {
-        title: 'Items',
-        iconCls: 'fa-user',
-        bind: {
-            html: '{loremIpsum}'
+        title: 'Filter',
+        iconCls: 'fa-cog',
+        items: {
+            xtype: 'filterform'
         }
     }, {
-        title: 'Groups',
+        title: 'Base Grid',
         iconCls: 'fa-users',
-        bind: {
-            html: '{loremIpsum}'
+        items: {
+            xtype: 'basepanel'
         }
     }, {
         title: 'Settings',

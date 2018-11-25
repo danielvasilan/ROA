@@ -151,7 +151,8 @@ select cod_v, count(distinct den)
 from z_ext_cat_matl
 group by cod_v;
 
-select cant_i, cant_r, totc,  
+with dt as (
+select x.*,  
 cant_e0+ 
 cant_e1+
 cant_e2+
@@ -193,9 +194,34 @@ cant_e37+
 cant_e38+
 cant_e39+
 cant_e40+
-cant_e41 cant_sum_e,
-cant_db
-from Z_EXT_GEST_LH;
+cant_e41+ 
+cant_e42 cant_sum_e
+from Z_EXT_GEST_LH x where regim = '5100')
+,dt2 as
+  (select x.*, ef1+ef2+ef3+ef4+ef5+ef6+ef7+ef8+ef9+ef10+efret cant_sum_ef from dt x)
+select 
+    --cant_i, cant_sum_e, totc, sold, cant_sum_e + totc, cant_sum_e + sold, cant_sum_ef,
+    x.*,
+    cant_sum_e + totc, cant_sum_e + sold, x.cant_i q_i
+from dt2 x 
+where 1=1
+--and cant_i <> cant_sum_e + totc
+--and cant_i <> cant_sum_e + sold
+--and cant_i <> cant_sum_e + sold+totc
+--and sold > 0 
+--and totc > 0
+and cant_i <> cant_sum_e+cant_sum_ef + sold
+order by to_date(dt_dvi, 'dd.mm.yyyy')
+;
+
+select * from ;
+
+select nr_dvi, dt_dvi, cod_art, count(1) 
+from Z_EXT_GEST_LH x where regim = '5100'
+group by nr_dvi, dt_dvi, cod_art
+having count(1)>1;
+
+
 
 
 -- update the custom code of the PRO items with the ones set for ALT
@@ -209,6 +235,10 @@ from item i
 inner join custom c on c.custom_code = i.custom_code
 where i.org_code = 'ALT'
 group by i.custom_code
+;
 
 
+-- insert the distinct DEN from the 
 
+
+select * from calendar order by calendar_day;
