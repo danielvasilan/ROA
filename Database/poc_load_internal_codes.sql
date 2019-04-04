@@ -2,7 +2,9 @@
 -- cleanup after tests
 delete from multi_table where table_name = 'TEHVAR_FIFOFAMILY';
 delete from item_variable where item_code like 'ROA%';
-delete from receipt_detail where ;
+delete from whs_trn_detail where org_code = 'PRO';
+delete from whs_trn where org_code = 'PRO';
+delete from receipt_detail where sbu_code = 'PRO';
 delete from receipt_header where sbu_code = 'PRO';
 delete from item where item_code like 'ROA%';
 
@@ -58,11 +60,12 @@ with dt as (
     from z_ext_cat_matl x
     inner join (select cod_art, sum(sold) sold from Z_EXT_GEST_LH where regim = '5100' group by cod_art) lh on lh.cod_art = x.cod_art and lh.sold > 0 
     )
-select 'ROA.' || max(cod_art) item_code, den description, max(um) puom, 
-    CASE WHEN min(um) = max(um) THEN NULL ELSE min(um) END suom, CASE WHEN min(um) = max(um) THEN 0 ELSE 1 END uom_conv,
-    'A' make_buy, max(cod_v) custom_code, '5100' custom_category, 0 flag_size, 0 flag_colour, 0 flag_range, 'PRO' org_code, 'MPLOHN' whs_stock, '???' mat_type, max(um) um_receit, 'MP' type_code
+select 'ROA.' || max(cod_art)||'.'||um item_code, den description, um puom, 
+    --CASE WHEN min(um) = max(um) THEN NULL ELSE min(um) END suom, CASE WHEN min(um) = max(um) THEN 0 ELSE 1 END uom_conv,
+    NULL suom, 0 uom_conv,
+    'A' make_buy, max(cod_v) custom_code, '5100' custom_category, 0 flag_size, 0 flag_colour, 0 flag_range, 'PRO' org_code, 'MPLOHN' whs_stock, '???' mat_type, um um_receit, 'MP' type_code
 from dt
-group by den
+group by den, um
 ;
 
 select * from item where org_code = 'PRO';
@@ -95,30 +98,79 @@ insert into receipt_header(sbu_code, receipt_year, receipt_code, receipt_date, o
     incoterm, currency_code, country_from, note, whs_code, status, fifo)
 with dt as (select distinct nr_dvi, dt_dvi, furniz from Z_EXT_GEST_LH where regim='5100' and sold>0)
 select 'PRO' sbu_code, substr(dt_dvi, 7,4) receipt_year,  'X'||to_char(to_date(dt_dvi,'dd.mm.yyyy'), 'yy')||'-'||nr_dvi receipt_code, 
-    to_date(dt_dvi, 'dd.mm.yyyy') receipt_date, 'PRO' org_code, 'ME3' receipt_type, 'ALT' suppl_code, nr_dvi doc_number, to_date(dt_dvi, 'dd.mm.yyyy') doc_date,
+    to_date(dt_dvi, 'dd.mm.yyyy') receipt_date, 'PRO' org_code, 'ME1' receipt_type, 'ALT' suppl_code, nr_dvi doc_number, to_date(dt_dvi, 'dd.mm.yyyy') doc_date,
     'CIP' incoterm, 'EUR' currency_code, 'IT' country_from, 'foxpro' note, 'MPLOHN' whs_code, 'I' status, 'Y' fifo
 from dt;
 
 select sbu_code, count(1) from receipt_header group by sbu_code;
 
-select * from receipt_header ;
+select * from receipt_header where org_code = 'PRO';
 
+
+insert into receipt_detail (sbu_code, ref_receipt, uom_receipt, qty_doc, qty_count, puom, qty_doc_puom, qty_count_puom, org_code, item_code,
+    season_code, whs_code, custom_code, origin_code, price_doc, price_doc_puom, line_seq, 
+    weight_net, weight_brut)
 with dt as (select * from Z_EXT_GEST_LH where regim='5100' and sold > 0)
 , dt2 as 
     (select dt.* , h.idriga h_idriga, m.um, i.item_code, i.custom_code
     from dt 
     left join receipt_header h on h.sbu_code = 'PRO' and h.receipt_date = to_date(dt_dvi, 'dd.mm.yyyy') and h.doc_number = dt.nr_dvi
     left join z_ext_cat_matl m on m.cod_art = dt.cod_art
-    left join item i on i.description = replace(m.den, ' ', '_') and i.org_code = 'PRO'
+    left join item i on i.description = replace(m.den, ' ', '_') and i.puom = m.um and i.org_code = 'PRO'
     )
 select 'PRO' sbu_code, h_idriga ref_receipt,
     um uom_receipt, sold qty_doc, sold qty_count, um puom, sold qty_doc_puom, sold qty_count_puom, 'PRO' org_code, item_code,
-    '' season_code, 'MPLOHN' whs_code, custom_code, 'IT' origin_code, round(val/cant_i, 5) price_doc, 0 price_doc_puom, 0 line_seq
+    'N/A' season_code, 'MPLOHN' whs_code, custom_code, 'IT' origin_code, round(val/cant_i, 5) price_doc, round(val/cant_i, 5) price_doc_puom, 0 line_seq,
+    0 weight_net, 0 weight_brut
 from dt2;
 
-select * from receipt_detail;
+select * from receipt_detail where sbu_code = 'PRO';
 
 select * from Z_EXT_GEST_LH where regim='5100' and sold>0;
+
+-- check for UOM
+select m.den, m.um, i.puom, i.suom, i.item_code
+from z_ext_cat_matl m 
+inner join (select cod_art, sum(sold) sold from Z_EXT_GEST_LH where regim = '5100' group by cod_art) lh on lh.cod_art = m.cod_art and lh.sold > 0 
+inner join item i on i.description = replace(m.den, ' ', '_') and i.puom = m.um and i.org_code = 'PRO'
+where m.um not in (i.puom, nvl(i.suom, 'xxx'))
+;
+
+
+-- updates for the wrong UMs
+select * from receipt_detail where item_code = 'ROA.9780' and uom_receipt = 'MBC';
+
+update receipt_detail
+set puom = 'BUC' where item_code = 'ROA.ROA.9780' and 
+;
+
+-- step 6)
+-- register the receipts
+begin
+  for x in (select * from receipt_header where org_code = 'PRO' and status = 'I')
+  loop
+      pkg_receipt.p_receipt_to_warehouse(x.idriga, x.receipt_date, 'Y');
+  end loop;
+end;
+/
+
+select * from app_log order by line_id desc;
+
+-- setp 7) check stock
+select * from stoc_online where org_code = 'PRO';
+
+select iv.var_value, count(1)
+from item i
+inner join item_variable iv on iv.item_code = i.item_code and i.org_code = iv.org_code and var_code = 'FIFOFAMILY'
+where i.org_code = 'PRO' and i.item_code like 'ROA%'
+group by iv.var_value
+;
+
+select * from v$version;
+
+
+
+
 
 -- CHECK !!!
 
@@ -160,12 +212,12 @@ order by 1;
 with dt as (
     select replace(den, ' ', '_') den, x.cod_v, x.cod_art, x.um, x.moneda, x.pret, x.rr
     from z_ext_cat_matl x
-    inner join (select cod_art, sum(totc) totc from Z_EXT_GEST_LH where regim = '5100' group by cod_art) lh on lh.cod_art = x.cod_art and lh.totc > 0 
+    inner join (select cod_art, sum(totc) totc from Z_EXT_GEST_LH where regim = '5100' and sold > 0 group by cod_art) lh on lh.cod_art = x.cod_art and lh.totc > 0 
     )
 select den, count(cod_art) , max(cod_art) , count(distinct um), count(distinct cod_v)
 from dt
 group by den
-having count(distinct um) > 2
+having count(distinct um) >= 2
 order by 5 desc
 /*
 select * from dt where den = 'BANDA_TEXTILA'
@@ -182,3 +234,7 @@ CUIE_PT._INCALTAMINTE;
 
 select * from custom
 where custom_code in ('59061000', '58063900');
+
+
+
+select description, puom, suom from item where org_code = 'PRO' and suom is not null;
